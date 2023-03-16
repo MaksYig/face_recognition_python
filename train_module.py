@@ -79,8 +79,7 @@ def take_screenshot_from_video():
 
 
 def main():
-      print(train_modul_by_img("Irina_Baribkina"))
+      print(train_modul_by_img("Yigal_Maksimov"))
       # train_modul_by_img("Yigal_Maksimov")
-     # take_screenshot_from_video()
 if __name__ == '__main__':
     main()
