@@ -1,6 +1,7 @@
 import os.path
 import sys
 from cv2 import cv2
+import datetime
 
 def take_screenshot_from_video():
     video_capture = cv2.VideoCapture(0)
@@ -16,12 +17,13 @@ def take_screenshot_from_video():
         # print(fps)
         if ret:
             frame_id = int(round(video_capture.get(1)))
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
             # print(frame_id)
             cv2.imshow("frame", frame)
             k = cv2.waitKey(1)
             if frame_id % multiplier == 0:
                 if count < 15:
-                    cv2.imwrite(f"DataSet_from_Video/{count}_screen.jpg", frame)
+                    cv2.imwrite(f"DataSet_from_Video/{count}_{timestamp}_screen.jpeg", frame)
                     count += 1
                     print(f"Take screenshot {count}")
             if k == ord('s'):

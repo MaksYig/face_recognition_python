@@ -5,7 +5,7 @@ from cv2 import cv2
 import face_recognition
 
 
-
+#For first time Training
 def train_modul_by_img(name):
     if not os.path.exists("DataSet"):
         print("[ERROR] there is no directory 'DataSet'")

@@ -5,10 +5,14 @@ import pickle
 def print_data(name):
     data = pickle.loads(open(f'Data/{name}_encoding.pickle', 'rb').read())
     print(data)
+    print(f"Length:{len(data['encodings'])}")
+
+
+
 
 
 def main():
-    print_data("Irina_Baribkina")
+    print_data("Yigal_Maksimov")
 
 
 if __name__ == '__main__':

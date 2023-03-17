@@ -5,7 +5,6 @@ import face_recognition
 import numpy as np
 
 
-
 def train_module_by_video_screenshots():
     if not os.path.exists("DataSet_from_Video"):
         print("[ERROR] there is no directory 'DataSet_from_Video'")
@@ -18,31 +17,36 @@ def train_module_by_video_screenshots():
     data_path = os.listdir(f"Data/")
     for (i, image) in enumerate(images):
         print(f'[+] processing {image}, img {i+1}/{len(images)}')
-        #found faces on images
+        # found faces on images
         face_img = face_recognition.load_image_file(f"DataSet_from_Video/{image}")
-        face_encoding = face_recognition.face_encodings(face_img)[0]
-        # See if the face is a match for the known face(s)
-        for data_item in data_path:
-            data = pickle.loads(open(f"Data/{data_item}", 'rb').read())
-            matches = face_recognition.compare_faces(data['encodings'], face_encoding)
-            # Or instead, use the known face with the smallest distance to the new face
-            face_distances = face_recognition.face_distance(data['encodings'], face_encoding)
-            best_match_index = np.argmin(face_distances)
-            if matches[best_match_index]:
-                print(matches[best_match_index])
-                name = data['name']
-                known_encodings.append(face_encoding)
-                print(f'This is {name}')
-                data_upload = {
-                   'name': name,
-                   "encodings": known_encodings
-                }
-                with open(f"Data/{name}_encoding.pickle", 'wb') as file:
-                    file.write(pickle.dumps(data_upload))
-                os.remove(f"DataSet_from_Video/{image}")
-                print(f"[INFO] File {name}_encoding.pickel successfully Updated!!")
-
-
+        face_encoding = face_recognition.face_encodings(face_img)
+        if len(face_encoding) > 0:
+            # See if the face is a match for the known face(s)
+            for data_item in data_path:
+                data = pickle.loads(open(f"Data/{data_item}", 'rb').read())
+                matches = face_recognition.compare_faces(data['encodings'], face_encoding[0])
+                # Or instead, use the known face with the smallest distance to the new face
+                face_distances = face_recognition.face_distance(data['encodings'], face_encoding[0])
+                best_match_index = np.argmin(face_distances)
+                if matches[best_match_index]:
+                    known_encodings = data['encodings']
+                    print(matches[best_match_index])
+                    name = data['name']
+                    known_encodings.append(face_encoding[0])
+                    print(f'This is {name}')
+                    data_upload = {
+                        "name": name,
+                        "encodings": known_encodings
+                    }
+                    with open(f"Data/{name}_encoding.pickle", 'wb') as file:
+                        file.write(pickle.dumps(data_upload))
+                    os.remove(f"DataSet_from_Video/{image}")
+                    print(f"[INFO] File {name}_encoding.pickel successfully Updated!!")
+                else:
+                    print("No mach with Data")
+        else:
+            print(f'No faces found. {image} was deleted!')
+            os.remove(f"DataSet_from_Video/{image}")
 
 
 
