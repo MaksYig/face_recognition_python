@@ -2,12 +2,14 @@ import os.path
 import pickle
 import math
 from cv2 import cv2
+# import cv2
 import face_recognition
 import numpy as np
 import pyttsx3
 import datetime
 import train_module_by_video_screenshot as train
 import send_msg_telegram as msg_tg
+
 
 
 #voice init
@@ -45,7 +47,6 @@ def detect_person_on_video():
     face_encodings = []
     face_names = []
     bodies_arr = []
-    match_found = False
     unknown_found = False
     known_count = 0
     unknown_count = 0
@@ -59,20 +60,18 @@ def detect_person_on_video():
             data = pickle.loads(open(f"Data/{file}", 'rb').read())
             known_encodings.append(data['encodings'][0])
             known_names.append(data['name'])
-            print(len(known_encodings))
     while True:
         # Grab a single frame of video
         ret, frame = video_capture.read()
         fps = video_capture.get(cv2.CAP_PROP_FPS)
-        multiplier = fps * 10
-        frame_id = int(round(video_capture.get(1)))
+        multiplier = fps * 5
+        frame_id = int(round(video_capture.get(cv2.CAP_PROP_POS_FRAMES)))
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         # Load the classifier
         classifier = cv2.CascadeClassifier('Assets/haarcascade_fullbody.xml')
-        # Detect the person
+        # Detect the person body
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        bodies = classifier.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=6)
-
+        bodies = classifier.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
         if len(bodies) > 0:
             for (i, body) in enumerate(bodies):
                 bodies_arr.append(f"{body}_{i}")
@@ -110,7 +109,7 @@ def detect_person_on_video():
                         idx = matches.index(True)
                         k_name = known_names[idx]
                         name = f"{k_name} ({confidence})"
-                        if frame_id % multiplier == 0:
+                        if frame_id % multiplier < 10:
                             if known_count < 15:
                                 cv2.imwrite(f"DataSet_from_Video/{known_count}_{timestamp}_screen.jpeg", frame)
                                 known_count += 1
@@ -122,7 +121,7 @@ def detect_person_on_video():
                                         data = pickle.loads(open(f"Data/{file}", 'rb').read())
                                         known_encodings.append(data['encodings'][0])
                                         known_names.append(data['name'])
-                                        print(len(known_encodings))
+
                     else:
                         unknown_found = True
                         unknown_count = 0
@@ -132,10 +131,11 @@ def detect_person_on_video():
         if unknown_found:
             if unknown_count < 2:
                 speak("Unknown Person detected")
-                print(f"Took screenshot of Unknown")
+                print(f"Took screenshot of Unknown Person")
                 cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
                 img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
-                msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}')
+                # analyze_img = DeepFace.analyze(img_path=img, actions=['age'])
+                msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}.')
                 unknown_count += 1
         process_this_frame = not process_this_frame
         # Display the results

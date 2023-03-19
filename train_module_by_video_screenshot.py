@@ -62,7 +62,7 @@ def train_module_by_video_screenshots():
                     print("No mach with Faces in Data")
         else:
             print(f'No faces found!')
-            # os.remove(f"DataSet_from_Video/{image}")
+            os.remove(f"DataSet_from_Video/{image}")
 
 
 
