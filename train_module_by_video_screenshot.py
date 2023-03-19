@@ -38,15 +38,15 @@ def train_module_by_video_screenshots():
                         "name": name,
                         "encodings": known_encodings
                     }
-                    with open(f"Data/{name}_encoding.pickle", 'wb') as file:
+                    with open(f"Data/{name}_encoding.pkl", 'wb') as file:
                         file.write(pickle.dumps(data_upload))
+                    print(f"[INFO] File {name}_encoding.pkl successfully Updated!!")
                     os.remove(f"DataSet_from_Video/{image}")
-                    print(f"[INFO] File {name}_encoding.pickel successfully Updated!!")
                 else:
                     print("No mach with Data")
         else:
-            print(f'No faces found. {image} was deleted!')
-            os.remove(f"DataSet_from_Video/{image}")
+            print(f'No faces found!')
+
 
 
 

@@ -3,7 +3,7 @@ import pickle
 
 
 def print_data(name):
-    data = pickle.loads(open(f'Data/{name}_encoding.pickle', 'rb').read())
+    data = pickle.loads(open(f'Data/{name}_encoding.pkl', 'rb').read())
     print(data)
     print(f"Length:{len(data['encodings'])}")
 
@@ -12,7 +12,7 @@ def print_data(name):
 
 
 def main():
-    print_data("Yigal_Maksimov")
+    print_data("Orly_Novoselskaya")
 
 
 if __name__ == '__main__':

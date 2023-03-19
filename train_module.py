@@ -39,10 +39,28 @@ def train_modul_by_img(name):
     }
     if not os.path.exists('Data'):
         os.mkdir('Data')
-    with open(f"Data/{name}_encoding.pickle", 'wb') as file:
+    with open(f"Data/{name}_encoding.pkl", 'wb') as file:
         file.write(pickle.dumps(data))
-    return f"[INFO] File {name}_encoding.pickel successfully created!!"
+    return f"[INFO] File {name}_encoding.pkl successfully created!!"
 
+
+def main_first_train():
+    if not os.path.exists("DataSet"):
+        print("[ERROR] there is no directory 'DataSet'.Nothing to train.")
+        sys.exit()
+    print("Welcome to first training script.")
+    train_dir = os.listdir('DataSet')
+    for (i, person_folder) in enumerate(train_dir):
+        print(f'To train {person_folder}, press ({i+1})')
+    person_to_train = int(input("Choose person to train:"))
+    for (i, person_folder) in enumerate(train_dir):
+        if person_to_train == i+1:
+            train_modul_by_img([i])
+            print(f"{train_dir[i]} was trained successfully!")
+            v = input('For new train, press (t), For exit, press (x)' )
+            if v == 't':
+                main_first_train()
+            else: sys.exit()
 def take_screenshot_from_video():
     video_capture = cv2.VideoCapture(0)
     count = 0
@@ -79,7 +97,8 @@ def take_screenshot_from_video():
 
 
 def main():
-      print(train_modul_by_img("Yigal_Maksimov"))
+      # print(train_modul_by_img("Orly_Novoselskaya"))
       # train_modul_by_img("Yigal_Maksimov")
+      main_first_train()
 if __name__ == '__main__':
     main()

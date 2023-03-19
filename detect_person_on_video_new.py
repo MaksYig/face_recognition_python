@@ -7,6 +7,7 @@ import numpy as np
 import pyttsx3
 import datetime
 import train_module_by_video_screenshot as train
+import send_msg_telegram as msg_tg
 
 
 #voice init
@@ -39,17 +40,31 @@ def detect_person_on_video():
 
     # Initialize some variables
     data_path = os.listdir(f"Data/")
+    encodings_folder = 'Data'
     face_locations = []
     face_encodings = []
     face_names = []
-    count = 0
+    bodies_arr = []
+    match_found = False
+    unknown_found = False
+    known_count = 0
+    unknown_count = 0
     process_this_frame = True
+    known_encodings = []
+    known_names = []
     speak('Welcome to Face Recognition Aplication, I hope you will enjoy!')
+    # Prepare DATA for Work
+    for file in data_path:
+        if file.endswith(".pkl"):
+            data = pickle.loads(open(f"Data/{file}", 'rb').read())
+            known_encodings.append(data['encodings'][0])
+            known_names.append(data['name'])
+            print(len(known_encodings))
     while True:
         # Grab a single frame of video
         ret, frame = video_capture.read()
         fps = video_capture.get(cv2.CAP_PROP_FPS)
-        multiplier = fps * 5
+        multiplier = fps * 10
         frame_id = int(round(video_capture.get(1)))
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         # Load the classifier
@@ -59,7 +74,14 @@ def detect_person_on_video():
         bodies = classifier.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=6)
 
         if len(bodies) > 0:
-            speak("Person was detected")
+            for (i, body) in enumerate(bodies):
+                bodies_arr.append(f"{body}_{i}")
+            print(bodies_arr)
+            if len(bodies_arr) > 0:
+                for (i, body) in enumerate(bodies_arr):
+                    speak(f"Person {i+1} was detected")
+        else: bodies_arr = []
+
         # Draw a bounding box around the person
         for (x, y, w, h) in bodies:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -75,34 +97,47 @@ def detect_person_on_video():
             face_locations = face_recognition.face_locations(rgb_small_frame)
             face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
             face_names = []
-
-            for face_encoding in face_encodings:
-                name = "Unknown"
-                # See if the face is a match for the known face(s)
-                for data_item in data_path:
-                    data = pickle.loads(open(f"Data/{data_item}", 'rb').read())
-                    matches = face_recognition.compare_faces(data['encodings'], face_encoding)
-                    # use the known face with the smallest distance to the new face
-                    face_distances = face_recognition.face_distance(data['encodings'], face_encoding)
+            if len(face_encodings) > 0:
+                for face_encoding in face_encodings:
+                    matches = face_recognition.compare_faces(known_encodings, face_encoding)
+                    face_distances = face_recognition.face_distance(known_encodings, face_encoding)
                     best_match_index = np.argmin(face_distances)
                     confidence = face_confidence(face_distances[best_match_index])
-
+                    name = 'Unknown'
+                # See if the face is a match for the known face(s)
                     if matches[best_match_index]:
-                        name = f"{data['name']} ({confidence})"
-                        if frame_id % multiplier < 5:
-                            if count < 15:
-                                cv2.imwrite(f"DataSet_from_Video/{count}_{timestamp}_screen.jpeg", frame)
-                                count += 1
-                                print(f"Take screenshot {count}")
+                        unknown_found = False
+                        idx = matches.index(True)
+                        k_name = known_names[idx]
+                        name = f"{k_name} ({confidence})"
+                        if frame_id % multiplier == 0:
+                            if known_count < 15:
+                                cv2.imwrite(f"DataSet_from_Video/{known_count}_{timestamp}_screen.jpeg", frame)
+                                known_count += 1
+                                print(f"Take screenshot {known_count}")
                                 train.train_module_by_video_screenshots()
-                        # print(f"{name}, {confidence}")
-                    if not matches[best_match_index]:
-                        print(f"Took screenshot of Unknown")
-                face_names.append(name)
-                print(face_names)
+                                # Update DATA for Work
+                                for file in data_path:
+                                    if file.endswith(".pkl"):
+                                        data = pickle.loads(open(f"Data/{file}", 'rb').read())
+                                        known_encodings.append(data['encodings'][0])
+                                        known_names.append(data['name'])
+                                        print(len(known_encodings))
+                    else:
+                        unknown_found = True
+                        unknown_count = 0
 
+                    face_names.append(name)
+                    print(face_names)
+        if unknown_found:
+            if unknown_count < 2:
+                speak("Unknown Person detected")
+                print(f"Took screenshot of Unknown")
+                # cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
+                # img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
+                # msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}')
+                unknown_count += 1
         process_this_frame = not process_this_frame
-
         # Display the results
         for (top, right, bottom, left), name in zip(face_locations, face_names):
             # Scale back up face locations since the frame we detected in was scaled to 1/4 size
