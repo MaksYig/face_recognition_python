@@ -133,9 +133,9 @@ def detect_person_on_video():
             if unknown_count < 2:
                 speak("Unknown Person detected")
                 print(f"Took screenshot of Unknown")
-                # cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
-                # img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
-                # msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}')
+                cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
+                img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
+                msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}')
                 unknown_count += 1
         process_this_frame = not process_this_frame
         # Display the results
@@ -146,13 +146,22 @@ def detect_person_on_video():
             bottom *= 4
             left *= 4
 
-            # Draw a box around the face
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            if unknown_found:
+                # Draw a box around the face
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_PLAIN
-            cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+                # Draw a label with a name below the face
+                cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (0, 0, 255), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_PLAIN
+                cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+            else:
+                # Draw a box around the face
+                cv2.rectangle(frame, (left, top), (right, bottom), (15, 255, 15), 2)
+
+                # Draw a label with a name below the face
+                cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (50, 249, 42), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_PLAIN
+                cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
         # Display the resulting image
         cv2.imshow('Video', frame)

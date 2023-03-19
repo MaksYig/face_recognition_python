@@ -3,7 +3,8 @@ import pickle
 import sys
 from cv2 import cv2
 import face_recognition
-
+from take_screenshoot_from_video import main as video
+from train_module_by_video_screenshot import main as screen_train
 
 #For first time Training
 def train_modul_by_img(name):
@@ -52,15 +53,23 @@ def main_first_train():
     train_dir = os.listdir('DataSet')
     for (i, person_folder) in enumerate(train_dir):
         print(f'To train {person_folder}, press ({i+1})')
+    print("Take screenShots from live web streem, press (222)")
+    print('Train from ScreenShots took from live streem, press (333)')
     person_to_train = int(input("Choose person to train:"))
     for (i, person_folder) in enumerate(train_dir):
         if person_to_train == i+1:
-            train_modul_by_img([i])
+            print(person_folder)
+            train_modul_by_img(person_folder)
             print(f"{train_dir[i]} was trained successfully!")
             v = input('For new train, press (t), For exit, press (x)' )
             if v == 't':
                 main_first_train()
             else: sys.exit()
+    if person_to_train == 222:
+        video()
+    if person_to_train == 333:
+        screen_train()
+
 def take_screenshot_from_video():
     video_capture = cv2.VideoCapture(0)
     count = 0

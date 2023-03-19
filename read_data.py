@@ -12,7 +12,7 @@ def print_data(name):
 
 
 def main():
-    print_data("Orly_Novoselskaya")
+    print_data("Yigal_Maksimov")
 
 
 if __name__ == '__main__':

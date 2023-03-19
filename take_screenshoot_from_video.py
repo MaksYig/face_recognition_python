@@ -5,6 +5,8 @@ import datetime
 
 def take_screenshot_from_video():
     video_capture = cv2.VideoCapture(0)
+    video_capture.set(3, 1280)
+    video_capture.set(4, 720)
     count = 0
     if not os.path.exists('DataSet_from_Video'):
         os.mkdir('DataSet_from_Video')
