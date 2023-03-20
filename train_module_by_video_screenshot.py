@@ -9,6 +9,9 @@ def train_module_by_video_screenshots():
     if not os.path.exists("DataSet_from_Video"):
         print("[ERROR] there is no directory 'DataSet_from_Video'")
         sys.exit()
+    if not os.path.exists('Data'):
+        print("[ERROR] there is no directory 'Data. Nothing to teach the system'")
+        sys.exit()
     # Initialize some variables
     data_path = os.listdir(f"Data/")
     known_encodings = []

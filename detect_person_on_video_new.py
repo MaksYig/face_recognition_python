@@ -1,23 +1,19 @@
 import os.path
 import pickle
 import math
-from cv2 import cv2
-# import cv2
+# from cv2 import cv2
+import cv2
 import face_recognition
 import numpy as np
-import pyttsx3
+from Voice_Speaker import speak
 import datetime
 import train_module_by_video_screenshot as train
-import send_msg_telegram as msg_tg
+from Analize_Unknown_person import analyze_unknown_person as analyze
+from PIL import Image
 
 
 
-#voice init
-engine = pyttsx3.init()
-rate = engine.getProperty('rate')
-engine.setProperty('rate', rate+0)
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
+
 
 
 def face_confidence(face_distance, face_match_threshold = 0.6):
@@ -30,19 +26,17 @@ def face_confidence(face_distance, face_match_threshold = 0.6):
         value = (linear_val + ((1.0 - linear_val) * math.pow((linear_val - 0.5) * 2, 0.2))) * 100
         return str(round(value, 2)) + '%'
 
-def speak(text):
-    engine.say(text)
-    engine.runAndWait()
+
 
 def detect_person_on_video():
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
     video_capture.set(3, 1280)
     video_capture.set(4, 720)
-
+    if not os.path.exists('Data'):
+        os.mkdir('Data')
     # Initialize some variables
     data_path = os.listdir(f"Data/")
-    encodings_folder = 'Data'
     face_locations = []
     face_encodings = []
     face_names = []
@@ -93,49 +87,58 @@ def detect_person_on_video():
             rgb_small_frame = small_frame[:, :, ::-1]
             # Find all the faces and face encodings in the current frame of video
             face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-            face_names = []
-            if len(face_encodings) > 0:
-                for face_encoding in face_encodings:
-                    matches = face_recognition.compare_faces(known_encodings, face_encoding)
-                    face_distances = face_recognition.face_distance(known_encodings, face_encoding)
-                    best_match_index = np.argmin(face_distances)
-                    confidence = face_confidence(face_distances[best_match_index])
-                    name = 'Unknown'
-                # See if the face is a match for the known face(s)
-                    if matches[best_match_index]:
-                        unknown_found = False
-                        idx = matches.index(True)
-                        k_name = known_names[idx]
-                        name = f"{k_name} ({confidence})"
-                        if frame_id % multiplier < 10:
-                            if known_count < 15:
-                                cv2.imwrite(f"DataSet_from_Video/{known_count}_{timestamp}_screen.jpeg", frame)
-                                known_count += 1
-                                print(f"Take screenshot {known_count}")
-                                train.train_module_by_video_screenshots()
-                                # Update DATA for Work
-                                for file in data_path:
-                                    if file.endswith(".pkl"):
-                                        data = pickle.loads(open(f"Data/{file}", 'rb').read())
-                                        known_encodings.append(data['encodings'][0])
-                                        known_names.append(data['name'])
+            for face_location in face_locations:
 
-                    else:
-                        unknown_found = True
-                        unknown_count = 0
+                face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+                face_names = []
+                if len(face_encodings) > 0:
+                    for face_encoding in face_encodings:
+                        matches = face_recognition.compare_faces(known_encodings, face_encoding)
+                        face_distances = face_recognition.face_distance(known_encodings, face_encoding)
+                        if len(face_distances) > 0:
+                            best_match_index = np.argmin(face_distances)
+                            confidence = face_confidence(face_distances[best_match_index])
+                            name = 'Unknown'
+                            # See if the face is a match for the known face(s)
+                            if matches[best_match_index]:
+                                idx = matches.index(True)
+                                k_name = known_names[idx]
+                                name = f"{k_name} ({confidence})"
+                                if frame_id % multiplier == 10:
+                                    if not os.path.exists('DataSet_from_Video'):
+                                        os.mkdir('DataSet_from_Video')
+                                    if known_count < 15:
+                                        cv2.imwrite(f"DataSet_from_Video/{known_count}_{timestamp}_screen.jpeg", frame)
+                                        known_count += 1
+                                        print(f"Take screenshot {known_count}")
+                                        train.train_module_by_video_screenshots()
+                                        # Update DATA for Work
+                                        for file in data_path:
+                                            if file.endswith(".pkl"):
+                                                data = pickle.loads(open(f"Data/{file}", 'rb').read())
+                                                known_encodings.append(data['encodings'][0])
+                                                known_names.append(data['name'])
 
-                    face_names.append(name)
-                    print(face_names)
-        if unknown_found:
-            if unknown_count < 2:
-                speak("Unknown Person detected")
-                print(f"Took screenshot of Unknown Person")
-                cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
-                img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
-                # # analyze_img = DeepFace.analyze(img_path=img, actions=['age'])
-                # msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}.')
-                unknown_count += 1
+                            else:
+                                if filter(lambda n:n == "Unknown", face_names):
+                                    if not os.path.exists('Unknown_DataSet_from_video'):
+                                        os.mkdir('Unknown_DataSet_from_video')
+                                    speak("Unknown Person detected")
+
+                                    print(face_locations)
+                                    print(f"Took screenshot of Unknown Person {unknown_count}")
+                                    top, right, bottom, left = face_location
+                                    face_img = rgb_small_frame[top - 40:bottom + 20, left - 20:right + 20]
+                                    pil_img = Image.fromarray(face_img)
+                                    pil_img.save(f'Unknown_DataSet_from_video/{unknown_count}_unknown.jpg')
+                                    img = f'Unknown_DataSet_from_video/{unknown_count}_unknown.jpg'
+                                    print(img)
+                                    analyze(img)
+                                    unknown_count += 1
+
+                            face_names.append(name)
+                        print(face_names)
+
         process_this_frame = not process_this_frame
         # Display the results
         for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -145,22 +148,22 @@ def detect_person_on_video():
             bottom *= 4
             left *= 4
 
-            if unknown_found:
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (50, 249, 42), 2)
+            # Draw a label with a name below the face
+            cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (50, 249, 42), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_PLAIN
+            cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+
+            if name == "Unknown":
                 # Draw a box around the face
                 cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
                 # Draw a label with a name below the face
                 cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (0, 0, 255), cv2.FILLED)
                 font = cv2.FONT_HERSHEY_PLAIN
                 cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
-            else:
-                # Draw a box around the face
-                cv2.rectangle(frame, (left, top), (right, bottom), (15, 255, 15), 2)
 
-                # Draw a label with a name below the face
-                cv2.rectangle(frame, (left, bottom - 30), (right, bottom), (50, 249, 42), cv2.FILLED)
-                font = cv2.FONT_HERSHEY_PLAIN
-                cv2.putText(frame, f"{name}", (left + 6, bottom - 6), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+
 
         # Display the resulting image
         cv2.imshow('Video', frame)
