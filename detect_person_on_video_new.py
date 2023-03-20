@@ -75,7 +75,6 @@ def detect_person_on_video():
         if len(bodies) > 0:
             for (i, body) in enumerate(bodies):
                 bodies_arr.append(f"{body}_{i}")
-            print(bodies_arr)
             if len(bodies_arr) > 0:
                 for (i, body) in enumerate(bodies_arr):
                     speak(f"Person {i+1} was detected")
@@ -134,8 +133,8 @@ def detect_person_on_video():
                 print(f"Took screenshot of Unknown Person")
                 cv2.imwrite(f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg", frame)
                 img = f"Unknown_DataSet_from_video/{unknown_count}_{timestamp}_screen.jpeg"
-                # analyze_img = DeepFace.analyze(img_path=img, actions=['age'])
-                msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}.')
+                # # analyze_img = DeepFace.analyze(img_path=img, actions=['age'])
+                # msg_tg.send_message_with_img(img, f'Unknown person detected.{timestamp}.')
                 unknown_count += 1
         process_this_frame = not process_this_frame
         # Display the results
